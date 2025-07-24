@@ -1,15 +1,17 @@
-let body = document.querySelector("body");
-let boxes = document.querySelectorAll(".box");
-let resetBtn = document.querySelector("#reset-btn");
-let Gamebtn = document.querySelector("#new-btn");
-let msgContainer = document.querySelector(".msg-container");
-let msg = document.querySelector("#msg");
-let draw = document.querySelector(".draw");
-let msgDraw = document.querySelector("#draw-msg");
+// DOM Elements
+const body = document.querySelector("body");
+const boxes = document.querySelectorAll(".box");
+const resetBtn = document.querySelector("#reset-btn");
+const Gamebtn = document.querySelector("#new-btn");
+const msgContainer = document.querySelector(".msg-container");
+const msg = document.querySelector("#msg");
+const draw = document.querySelector(".draw");
+const msgDraw = document.querySelector("#draw-msg");
 
 let turnO = true; // player X, Player 0
+let gameActive = true;
 
-const winPatterens = [
+const winPatterns = [
   [0, 1, 2],
   [0, 3, 6],
   [0, 4, 8],
@@ -20,116 +22,108 @@ const winPatterens = [
   [6, 7, 8],
 ];
 
+// Reset game function
 const resetGame = () => {
   turnO = true;
+  gameActive = true;
   enableBoxes();
   msgContainer.classList.add("hide");
+  msgDraw.style.display = "none";
+  
+  // Smooth transition
+  body.style.transition = "transform 0.5s ease-out";
+  body.style.transform = "translateX(0)";
+  
+  // Remove transition after animation completes
+  setTimeout(() => {
+    body.style.transition = "none";
+  }, 500);
 };
 
+// Handle box click
+const handleBoxClick = (e) => {
+  if (!gameActive) return;
+  
+  const box = e.target;
+  
+  if (box.innerText !== "") return;
+  
+  if (turnO) {
+    box.innerText = "O";
+    box.style.textShadow = "4px 4px 5px red";
+  } else {
+    box.innerText = "X";
+    box.style.textShadow = "4px 4px 5px darkblue";
+  }
+  
+  turnO = !turnO;
+  box.disabled = true;
+  
+  checkWinner();
+  checkDraw();
+};
+
+// Add both click and touch events
 boxes.forEach((box) => {
-  box.addEventListener("click", () => {
-    if (turnO) {
-      //playerO
-      box.innerText = "O";
-      turnO = false;
-      box.style.textShadow = "4px 4px 5px red";
-    } else {
-      //playerX
-      box.innerText = "X";
-      turnO = true;
-      box.style.textShadow = "4px 4px 5px darkblue";
-    }
-    box.disabled = true;
-    checkWinner();
-    checkDraw();
-  });
+  box.addEventListener("click", handleBoxClick);
+  box.addEventListener("touchend", handleBoxClick, { passive: true });
 });
 
 const disableBoxes = () => {
-  for (let box of boxes) {
+  gameActive = false;
+  boxes.forEach(box => {
     box.disabled = true;
-  }
+  });
 };
 
 const enableBoxes = () => {
-  for (let box of boxes) {
+  boxes.forEach(box => {
     box.disabled = false;
     box.innerText = "";
-  }
+  });
 };
 
 const showWinner = (winner) => {
-  msg.innerText = `VICTORY⭐⭐⭐, Winner is ${winner}`;
+  msg.innerText = `VICTORY ⭐⭐⭐ Winner is ${winner}`;
   msgContainer.classList.remove("hide");
   disableBoxes();
 };
 
 const checkWinner = () => {
-  for (let pattern of winPatterens) {
-    let pos1val = boxes[pattern[0]].innerText;
-    let pos2val = boxes[pattern[1]].innerText;
-    let pos3val = boxes[pattern[2]].innerText;
+  for (let pattern of winPatterns) {
+    const [a, b, c] = pattern;
+    const valA = boxes[a].innerText;
+    const valB = boxes[b].innerText;
+    const valC = boxes[c].innerText;
 
-    if (pos1val != "" && pos2val != "" && pos3val != "") {
-      if (pos1val === pos2val && pos2val === pos3val) {
-        showWinner(pos1val);
-      }
+    if (valA && valA === valB && valA === valC) {
+      showWinner(valA);
+      return true;
     }
   }
+  return false;
 };
 
 const checkDraw = () => {
-  if (!checkWinner() && [...boxes].every((box) => box.innerText !== "")) {
+  if (!checkWinner() && [...boxes].every(box => box.innerText !== "")) {
     msgDraw.innerText = "Game is draw! Well played, both Players!";
-    msgDraw.style.fontSize = "x-large";
-    msgDraw.style.color = "yellow";
-    msgDraw.style.textShadow = "4px 4px 5px darkgrey";
     msgDraw.style.display = "block";
     disableBoxes();
   }
 };
 
-Gamebtn.addEventListener("click", () => {
-  msgDraw.innerText = "";
-  resetGame();
-  body.style.transform = "translateX(-100%)";
+// New Game button
+Gamebtn.addEventListener("click", resetGame);
 
-  const duration = 2000;
+// Reset Game button
+resetBtn.addEventListener("click", resetGame);
 
-  const startTime = performance.now();
+// Prevent zooming on double-tap
+document.addEventListener('dblclick', (e) => {
+  e.preventDefault();
+}, { passive: false });
 
-  const intervalId = setInterval(() => {
-    
-    const progress = (performance.now() - startTime) / duration;
-
-    const translateX = -100 + (100 * progress);
-
-    body.style.transform = `translateX(${translateX}%)`;
-
-    if (progress >= 1) {
-      clearInterval(intervalId);
-    }
-  }, 10); 
-});
-resetBtn.addEventListener("click", () => {
-  msgDraw.style.display = "none";
-  resetGame();
-  body.style.transform = "translateX(-100%)";
-
-  const duration = 2000;
-
-  const startTime = performance.now();
-
-  const intervalId = setInterval(() => {
-    
-    const progress = (performance.now() - startTime) / duration;
-
-    const translateX = -100 + (100 * progress);
-
-    body.style.transform = `translateX(${translateX}%)`;
-
-    if (progress >= 1) {
-      clearInterval(intervalId);
-    }
-  }, 10); 
+// Handle window resize
+window.addEventListener('resize', () => {
+  // Adjust layout if needed
 });
